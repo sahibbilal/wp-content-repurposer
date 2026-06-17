@@ -3,7 +3,7 @@
  * Plugin Name: WP Content Repurposer
  * Plugin URI:  https://bilalmahmood.dev
  * Description: Repurpose any WordPress post into a LinkedIn post, Twitter/X thread, and email newsletter intro — with one click using Claude AI.
- * Version:     1.0.0
+ * Version:     1.1.0
  * Author:      Bilal Mahmood
  * Author URI:  https://bilalmahmood.dev
  * License:     GPL-2.0+
@@ -12,7 +12,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'WCR_VERSION', '1.0.0' );
+define( 'WCR_VERSION', '1.1.0' );
 define( 'WCR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WCR_URL', plugin_dir_url( __FILE__ ) );
 

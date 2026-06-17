@@ -13,6 +13,26 @@
     border-radius: 4px;
 }
 
+/* ── Blog notes ───────────────────────────────────────────────────────────── */
+#wcr-blog-notes-wrap {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 14px 16px;
+}
+
+#wcr-blog-notes {
+    width: 100%;
+    height: 80px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+}
+
 /* ── Tabs ─────────────────────────────────────────────────────────────────── */
 #wcr-tabs {
     display: flex;
@@ -125,6 +145,30 @@
 .wcr-tweet-len.over {
     color: #c00;
     font-weight: 600;
+}
+
+/* ── Blog result panel ────────────────────────────────────────────────────── */
+#wcr-blog-result {
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 16px;
+    background: #fafafa;
+}
+
+#wcr-blog-result input[type="text"] {
+    height: 36px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    padding: 6px 10px;
+    box-sizing: border-box;
+    font-size: 15px;
+    background: #fff;
+}
+
+#wcr-blog-result input[type="text"]:focus {
+    border-color: #2271b1;
+    outline: none;
+    box-shadow: 0 0 0 1px #2271b1;
 }
 
 /* ── Actions ──────────────────────────────────────────────────────────────── */
