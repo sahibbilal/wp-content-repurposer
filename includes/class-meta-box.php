@@ -83,15 +83,22 @@ class WCR_Meta_Box {
                     </span>
                 </div>
 
-                <!-- Blog post notes field (shown when Generate Blog Post is clicked) -->
+                <!-- Blog idea input (shown when Generate Blog Post is clicked) -->
                 <div id="wcr-blog-notes-wrap" style="display:none;margin-top:12px;">
+                    <p style="margin:0 0 8px;color:#555;font-size:13px;">
+                        Claude reads your website — its name, categories, and recent posts — then writes a post that fits naturally.
+                        <a href="<?php echo esc_url( admin_url( 'options-general.php?page=wp-content-repurposer' ) ); ?>" target="_blank" style="white-space:nowrap;">
+                            Preview what Claude sees →
+                        </a>
+                    </p>
                     <label for="wcr-blog-notes" style="font-weight:600;display:block;margin-bottom:4px;">
-                        Topic / Notes <span style="font-weight:400;color:#888;">(optional — add an outline, key points, or leave blank)</span>
+                        Your Idea
                     </label>
-                    <textarea id="wcr-blog-notes" style="width:100%;height:80px;resize:vertical;" placeholder="e.g. - cover REST vs GraphQL&#10;- target audience: junior devs&#10;- include real-world examples"></textarea>
-                    <div style="margin-top:8px;display:flex;gap:8px;">
-                        <button id="wcr-blog-generate-btn" class="button button-primary" type="button">✨ Generate Now</button>
+                    <textarea id="wcr-blog-notes" style="width:100%;height:90px;resize:vertical;font-size:13px;" placeholder="e.g. Why most developers underestimate API rate limiting — and what to do instead&#10;&#10;Or: a beginner's guide to setting up CI/CD with GitHub Actions&#10;&#10;Be as specific or as vague as you want."></textarea>
+                    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+                        <button id="wcr-blog-generate-btn" class="button button-primary" type="button">✨ Generate Blog Post</button>
                         <button id="wcr-blog-cancel-btn" class="button" type="button">Cancel</button>
+                        <span style="font-size:12px;color:#888;margin-left:4px;">Claude reads your site first, then writes</span>
                     </div>
                 </div>
 
@@ -230,16 +237,15 @@ class WCR_Meta_Box {
         }
 
         $post_id = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
-        $topic   = isset( $_POST['topic'] )   ? sanitize_textarea_field( wp_unslash( $_POST['topic'] ) ) : '';
-        $notes   = isset( $_POST['notes'] )   ? sanitize_textarea_field( wp_unslash( $_POST['notes'] ) ) : '';
-        $tone    = isset( $_POST['tone'] )     ? sanitize_text_field( wp_unslash( $_POST['tone'] ) )     : 'professional';
+        $idea    = isset( $_POST['idea'] )    ? sanitize_textarea_field( wp_unslash( $_POST['idea'] ) ) : '';
+        $tone    = isset( $_POST['tone'] )    ? sanitize_text_field( wp_unslash( $_POST['tone'] ) )    : 'professional';
 
-        if ( empty( trim( $topic ) ) ) {
-            wp_send_json_error( array( 'message' => 'Please enter a topic or working title.' ) );
+        if ( empty( trim( $idea ) ) ) {
+            wp_send_json_error( array( 'message' => 'Please describe your idea before generating.' ) );
         }
 
         $repurposer = new WCR_Repurposer();
-        $result     = $repurposer->generate_blog( $topic, $notes, $tone );
+        $result     = $repurposer->generate_blog( $idea, $tone );
 
         if ( is_wp_error( $result ) ) {
             wp_send_json_error( array( 'message' => $result->get_error_message() ) );

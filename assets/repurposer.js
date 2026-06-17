@@ -95,25 +95,22 @@
     $('#wcr-blog-generate-btn').on('click', function () {
         var postId = $('#post_ID').val() || 0;
         var tone   = $('#wcr-tone').val();
-        var notes  = $('#wcr-blog-notes').val().trim();
+        var idea   = $('#wcr-blog-notes').val().trim();
 
-        // Topic = current post title, or ask the user to type it in notes.
-        var topic  = $('#title').val().trim() || notes;
-
-        if ( !topic ) {
-            showError('Enter a topic in the notes field (or set a post title first).');
+        if ( !idea ) {
+            $('#wcr-blog-notes').focus();
+            showError('Describe your idea first — even one sentence is enough.');
             return;
         }
 
-        startSpinner('Writing blog post with Claude…');
+        startSpinner('Reading your site, then writing with Claude…');
         $('#wcr-blog-notes-wrap').slideUp(150);
 
         $.post(wcrData.ajaxUrl, {
             action:  'wcr_generate_blog',
             nonce:   wcrData.nonce,
             post_id: postId,
-            topic:   topic,
-            notes:   notes,
+            idea:    idea,
             tone:    tone
         })
         .done(function (res) {

@@ -35,25 +35,70 @@ class WCR_Repurposer {
     }
 
     /**
-     * Generate a full blog post from a title/topic and optional notes.
+     * Generate a full blog post from an idea, grounded in the site's context.
      *
-     * @param string $title  Topic or working title.
-     * @param string $notes  Optional bullet points or outline.
+     * @param string $idea   The admin's idea or topic.
      * @param string $tone
-     * @return array|WP_Error  Keys: title, content (HTML-ready paragraphs)
+     * @return array|WP_Error  Keys: title, content
      */
-    public function generate_blog( $title, $notes = '', $tone = 'professional' ) {
+    public function generate_blog( $idea, $tone = 'professional' ) {
         if ( empty( $this->api_key ) ) {
             return new WP_Error( 'no_api_key', 'Claude API key is not configured. Go to Settings → Content Repurposer.' );
         }
 
-        $tone_desc = $this->tone_description( $tone );
-        $prompt    = $this->build_blog_prompt( $title, $notes, $tone_desc );
+        $tone_desc    = $this->tone_description( $tone );
+        $site_context = $this->gather_site_context();
+        $prompt       = $this->build_blog_prompt( $idea, $site_context, $tone_desc );
 
         $raw = $this->call_api( $prompt, 2000 );
         if ( is_wp_error( $raw ) ) return $raw;
 
         return $this->parse_blog_response( $raw );
+    }
+
+    /**
+     * Read the WordPress site to build a context summary for Claude.
+     * Pulls site identity, categories, and recent post titles/excerpts.
+     *
+     * @return string
+     */
+    public function gather_site_context() {
+        $site_name    = get_bloginfo( 'name' );
+        $site_desc    = get_bloginfo( 'description' );
+        $site_url     = get_bloginfo( 'url' );
+
+        // Categories.
+        $categories = get_categories( array( 'hide_empty' => false, 'number' => 20 ) );
+        $cat_names  = wp_list_pluck( $categories, 'name' );
+
+        // Recent posts — titles + excerpts to show writing style and topics.
+        $recent = get_posts( array(
+            'numberposts' => 10,
+            'post_status' => 'publish',
+            'fields'      => 'all',
+        ) );
+
+        $recent_lines = array();
+        foreach ( $recent as $p ) {
+            $excerpt = $p->post_excerpt
+                ? wp_trim_words( $p->post_excerpt, 30, '' )
+                : wp_trim_words( wp_strip_all_tags( $p->post_content ), 30, '' );
+            $recent_lines[] = '- ' . $p->post_title . ( $excerpt ? ': ' . $excerpt : '' );
+        }
+
+        $context  = "WEBSITE: {$site_name}\n";
+        $context .= "URL: {$site_url}\n";
+        if ( $site_desc ) {
+            $context .= "TAGLINE: {$site_desc}\n";
+        }
+        if ( $cat_names ) {
+            $context .= "CATEGORIES: " . implode( ', ', $cat_names ) . "\n";
+        }
+        if ( $recent_lines ) {
+            $context .= "RECENT POSTS (for tone and topic reference):\n" . implode( "\n", $recent_lines ) . "\n";
+        }
+
+        return $context;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -113,20 +158,24 @@ BLOG POST CONTENT:
 {$content}";
     }
 
-    private function build_blog_prompt( $title, $notes, $tone_desc ) {
-        $notes_section = $notes ? "\n\nOUTLINE / NOTES:\n{$notes}" : '';
-
+    private function build_blog_prompt( $idea, $site_context, $tone_desc ) {
         return "You are an expert blog writer. Your tone should be: {$tone_desc}.
 
-Write a complete, well-structured blog post. Return ONLY the two sections below with exactly these headers — no intro, no explanation.
+You are writing for the following website. Study its identity, categories, and existing posts carefully — your blog post must feel like it belongs on this site naturally.
+
+SITE CONTEXT:
+{$site_context}
+
+Write a complete, well-structured blog post based on the admin's idea below. The post must match the site's niche, vocabulary, and audience. Return ONLY the two sections with exactly these headers — no intro, no explanation, no extra text.
 
 ---TITLE---
-(Write an optimized, engaging blog post title — clear, specific, benefit-driven)
+(Write an optimized, engaging title that fits the site's style — clear, specific, benefit-driven)
 
 ---CONTENT---
-(Write the full blog post body: 600–900 words. Use ## for subheadings. Start with a hook paragraph. Cover the topic thoroughly with 3–4 sections. End with a practical takeaway or call to action. Use plain paragraphs — no bullet point overload. Write for a human reader, not for SEO bots.)
+(Write the full blog post: 600–900 words. Start with a hook that grabs the site's audience. Use ## for subheadings. Cover 3–4 sections with depth. End with a practical takeaway or call to action. Write like a human — no bullet-point overload, no filler phrases like \"In today's world\".)
 
-TOPIC / WORKING TITLE: {$title}{$notes_section}";
+ADMIN'S IDEA:
+{$idea}";
     }
 
     private function parse_repurpose_response( $raw ) {
