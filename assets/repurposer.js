@@ -115,7 +115,11 @@
         })
         .done(function (res) {
             if (!res.success) {
-                showError(res.data ? res.data.message : 'An error occurred.');
+                if (res.data && res.data.code === 'site_not_read') {
+                    showSiteNotReadError(res.data.settings_url);
+                } else {
+                    showError(res.data ? res.data.message : 'An error occurred.');
+                }
                 return;
             }
             var d = res.data;
@@ -250,6 +254,16 @@
     // ── Error display ─────────────────────────────────────────────────────────
     function showError(msg) {
         $('#wcr-error p').text(msg);
+        $('#wcr-error').show();
+    }
+
+    function showSiteNotReadError(settingsUrl) {
+        var url = settingsUrl || wcrData.settingsUrl;
+        $('#wcr-error p').html(
+            'Site content has not been read yet. ' +
+            '<a href="' + url + '" target="_blank"><strong>Go to Settings → Read Site Content</strong></a>' +
+            ' first, then come back and generate.'
+        );
         $('#wcr-error').show();
     }
 

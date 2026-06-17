@@ -42,6 +42,8 @@ class WCR_Meta_Box {
         wp_localize_script( 'wcr-meta-box', 'wcrData', array(
             'nonce'       => wp_create_nonce( 'wcr_nonce' ),
             'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+            'settingsUrl' => admin_url( 'options-general.php?page=wp-content-repurposer' ),
+            'siteReady'   => ! empty( get_option( 'wcr_site_context', '' ) ),
             'defaultTone' => get_option( 'wcr_default_tone', 'professional' ),
             // Persisted output — loaded on page load so refresh doesn't wipe results.
             'saved' => array(
@@ -248,6 +250,14 @@ class WCR_Meta_Box {
         $result     = $repurposer->generate_blog( $idea, $tone );
 
         if ( is_wp_error( $result ) ) {
+            $code = $result->get_error_message();
+            if ( $code === 'site_not_read' ) {
+                wp_send_json_error( array(
+                    'code'        => 'site_not_read',
+                    'message'     => 'You need to read your site content first.',
+                    'settings_url'=> admin_url( 'options-general.php?page=wp-content-repurposer' ),
+                ) );
+            }
             wp_send_json_error( array( 'message' => $result->get_error_message() ) );
         }
 

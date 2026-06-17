@@ -35,8 +35,10 @@ class WCR_Settings {
         if ( $hook !== 'settings_page_wp-content-repurposer' ) return;
         wp_enqueue_script( 'wcr-settings', WCR_URL . 'assets/settings.js', array( 'jquery' ), WCR_VERSION, true );
         wp_localize_script( 'wcr-settings', 'wcrSettings', array(
-            'nonce'   => wp_create_nonce( 'wcr_nonce' ),
-            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+            'nonce'        => wp_create_nonce( 'wcr_nonce' ),
+            'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+            'savedContext' => get_option( 'wcr_site_context', '' ),
+            'savedDate'    => get_option( 'wcr_site_context_date', '' ),
         ) );
     }
 
@@ -121,15 +123,42 @@ class WCR_Settings {
                     Click below to see exactly what Claude receives.
                 </p>
 
-                <button id="wcr-read-site-btn" class="button button-secondary" type="button">
-                    🔍 Read Site Content
-                </button>
-                <span id="wcr-site-spinner" style="display:none;margin-left:10px;">
-                    <span class="spinner is-active" style="float:none;margin:0;vertical-align:middle;"></span>
-                    Reading…
-                </span>
+                <?php
+                $saved_context = get_option( 'wcr_site_context', '' );
+                $saved_date    = get_option( 'wcr_site_context_date', '' );
+                $has_context   = ! empty( $saved_context );
+                ?>
 
-                <div id="wcr-site-preview" style="display:none;margin-top:16px;">
+                <?php if ( $has_context ) : ?>
+                <div id="wcr-site-status" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;
+                     background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:10px 14px;">
+                    <span style="color:#16a34a;font-size:18px;">✓</span>
+                    <span style="font-size:13px;color:#166534;">
+                        Site content read on <strong><?php echo esc_html( $saved_date ); ?></strong>
+                        — Claude will use this when generating blog posts.
+                    </span>
+                </div>
+                <?php else : ?>
+                <div id="wcr-site-status" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;
+                     background:#fff7ed;border:1px solid #fed7aa;border-radius:4px;padding:10px 14px;">
+                    <span style="color:#ea580c;font-size:18px;">!</span>
+                    <span style="font-size:13px;color:#9a3412;">
+                        Site content not read yet. Click <strong>Read Site Content</strong> before generating blog posts.
+                    </span>
+                </div>
+                <?php endif; ?>
+
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <button id="wcr-read-site-btn" class="button <?php echo $has_context ? 'button-secondary' : 'button-primary'; ?>" type="button">
+                        🔍 <?php echo $has_context ? 'Re-read Site Content' : 'Read Site Content'; ?>
+                    </button>
+                    <span id="wcr-site-spinner" style="display:none;">
+                        <span class="spinner is-active" style="float:none;margin:0;vertical-align:middle;"></span>
+                        Reading your site…
+                    </span>
+                </div>
+
+                <div id="wcr-site-preview" style="<?php echo $has_context ? 'display:block;' : 'display:none;'; ?>margin-top:16px;">
                     <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.5px;">
                         What Claude sees about your site
                     </p>
@@ -138,10 +167,9 @@ class WCR_Settings {
                               style="width:100%;min-height:260px;font-family:monospace;font-size:12px;
                                      line-height:1.6;border:1px solid #dcdcde;border-radius:4px;
                                      padding:12px;background:#f6f7f7;color:#1d2327;resize:vertical;
-                                     box-sizing:border-box;"></textarea>
+                                     box-sizing:border-box;"><?php echo esc_textarea( $saved_context ); ?></textarea>
                     <p style="margin:6px 0 0;font-size:12px;color:#888;">
-                        This context is sent to Claude automatically every time you generate a blog post.
-                        It is never stored — built fresh from your live site on each request.
+                        Saved to WordPress options. Re-read whenever you add new posts or change your site's focus.
                     </p>
                 </div>
 
@@ -163,6 +191,10 @@ class WCR_Settings {
 
         $repurposer = new WCR_Repurposer();
         $context    = $repurposer->gather_site_context();
+
+        // Save so blog generation can reuse without re-reading.
+        update_option( 'wcr_site_context', $context );
+        update_option( 'wcr_site_context_date', current_time( 'mysql' ) );
 
         wp_send_json_success( array( 'context' => $context ) );
     }

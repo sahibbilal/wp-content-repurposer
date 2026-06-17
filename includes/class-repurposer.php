@@ -46,9 +46,13 @@ class WCR_Repurposer {
             return new WP_Error( 'no_api_key', 'Claude API key is not configured. Go to Settings → Content Repurposer.' );
         }
 
-        $tone_desc    = $this->tone_description( $tone );
-        $site_context = $this->gather_site_context();
-        $prompt       = $this->build_blog_prompt( $idea, $site_context, $tone_desc );
+        $site_context = get_option( 'wcr_site_context', '' );
+        if ( empty( $site_context ) ) {
+            return new WP_Error( 'no_site_context', 'site_not_read' );
+        }
+
+        $tone_desc = $this->tone_description( $tone );
+        $prompt    = $this->build_blog_prompt( $idea, $site_context, $tone_desc );
 
         $raw = $this->call_api( $prompt, 2000 );
         if ( is_wp_error( $raw ) ) return $raw;
